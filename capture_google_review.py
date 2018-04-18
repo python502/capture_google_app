@@ -167,7 +167,7 @@ class CaptureGoogleReview(object):
                 result_datas = self.__format_data(app_name, st, review_datas)
                 table = CaptureGoogleReview.TABLE_NAME_REVIEW
                 replace_columns = ['id', 'app_name', 'before_key', 'user_name', 'score', 'review', 'review_time', 'helpful']
-                self._save_datas(mysql,result_datas, table, replace_columns)
+                self._save_datas(mysql, result_datas, table, replace_columns)
                 if len(review_datas) != 40:
                     logger.info('Get the last data')
                     break
@@ -175,7 +175,7 @@ class CaptureGoogleReview(object):
                 t1, t2 = 0, 0
         return True
 
-    def __format_data(self,app_name, st, source_datas):
+    def __format_data(self, app_name, st, source_datas):
         results = []
         for data in source_datas:
             try:
@@ -216,6 +216,7 @@ class CaptureGoogleReview(object):
                 queue.put([st_src, result])
             elif now_page>end_page:
                 queue.put(None)
+                logger.info('')
                 return True
             else:
                 continue
@@ -236,11 +237,6 @@ class CaptureGoogleReview(object):
 
         p1.join()
         p2.join()
-
-
-
-
-
 
 def main():
     startTime = datetime.now()
