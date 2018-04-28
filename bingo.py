@@ -10,7 +10,7 @@
 import random
 import numpy as np
 from logger import logger
-
+# random.shuffle(range,begin,end)
 for n in range(1,60):
     all = []
     for i in range(5):
@@ -27,6 +27,9 @@ for n in range(1,60):
     result = map(list, zip(*all))
     logger.info('Sequence: {}'.format(n))
     logger.info('Card: {}'.format(result))
+
+
+
 
 
 

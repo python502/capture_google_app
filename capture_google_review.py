@@ -185,10 +185,10 @@ class CaptureGoogleReview(object):
                 result['score'] = data[2]
                 review = ''
                 if data[4]:
-                    review = self.filter_emoji(data[4]).encode('utf-8').replace('\\', '')
+                    review = self.filter_emoji(data[4]).encode('utf-8').replace('\\', '').strip()
                 if not review:
                     if data[3]:
-                        review = self.filter_emoji(data[3]).encode('utf-8').replace('\\', '')
+                        review = self.filter_emoji(data[3]).encode('utf-8').replace('\\', '').strip()
                 result['review'] = review or 'invalid review'
                 time_review = time.localtime(data[5][0])
                 result['review_time'] = time.strftime('%Y%m%d%H%M%S', time_review)
@@ -233,8 +233,8 @@ class CaptureGoogleReview(object):
 
     def deal_main(self, app_name):
         manager = multiprocessing.Manager()
-        # queue = manager.Queue(maxsize = 1000)
-        queue = manager.Queue()
+        queue = manager.Queue(maxsize = 1000)
+        # queue = manager.Queue()
         # query_conditions = {'begin_page': 0, 'end_page': 3}
         # p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name, query_conditions,))
         p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name,))
@@ -246,23 +246,11 @@ class CaptureGoogleReview(object):
         p1.join()
         p2.join()
 
-    def emotion_analysis(self, app_name):
-        import pandas as pd
-
-        mysql = MysqldbOperate(DICT_MYSQL)
-        select_sql = 'select score,helpful,review from {} where app_name="{}"'.format(CaptureGoogleReview.TABLE_NAME_REVIEW, app_name)
-        record = mysql.sql_query(select_sql)
-        x=[i for i in record]
-        f1 = pd.DataFrame(record)
-        import pdb
-        pdb.set_trace()
-
 
 def main():
     startTime = datetime.now()
     useragent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
-    app_name = 'com.imangi.templerun2'
-    # app_name = 'com.orangeapps.piratetreasure'
+    app_name = 'com.tencent.mm'
     objCaptureGoogleReview = CaptureGoogleReview(useragent)
     # results = []
     # result, st = objCaptureGoogleReview.deal_first_reviews(app_name)
@@ -272,8 +260,7 @@ def main():
     #     results.extend(result)
     #     print len(results)
     # print results
-    # objCaptureGoogleReview.deal_main(app_name)
-    objCaptureGoogleReview.emotion_analysis(app_name)
+    objCaptureGoogleReview.deal_main(app_name)
     endTime = datetime.now()
     print 'seconds', (endTime - startTime).seconds
 if __name__ == '__main__':
