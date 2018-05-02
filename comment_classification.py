@@ -45,8 +45,10 @@ def stopword(words):
     try:
         # english_stopwords = stopwords.words('english')
         # words = [word for word in words if word not in english_stopwords]
+        # english_punctuations = ['\'s', '...', ',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$',\
+        #                         '%', 'n\'t']
         english_punctuations = ['\'s', '...', ',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$',\
-                                '%', 'n\'t']
+                                '%']
         words = [word for word in words if word not in english_punctuations]
         return words
     except Exception:
