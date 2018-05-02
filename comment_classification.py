@@ -117,6 +117,14 @@ def check_null(a):
     if a[0]:
         return True
 
+def get_best_parameters(clf, parameters,X,y):
+    from sklearn.model_selection import GridSearchCV
+    gs_clf = GridSearchCV(clf, parameters, n_jobs=-1)
+    gs_clf = gs_clf.fit(X, y)
+    best_parameters, score = gs_clf.best_params_, gs_clf.best_score_
+    for param_name in sorted(parameters.keys()):
+        print("%s: %r" % (param_name, best_parameters[param_name]))
+    print ('best score %s' % (score,))
 def generate_classifier_model(train_data, target, test_probability=0.0, target_names = {}):
     train_data = format_info(train_data)
     datas = filter(check_null, zip(train_data, target))
@@ -133,7 +141,14 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
     # clf = MultinomialNB().fit(X_train_tfidf, y_train)
     from sklearn.linear_model import SGDClassifier
-    clf = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, max_iter=5, random_state=42).fit(X_train_tfidf, y_train)
+
+    # parameters = {
+    #     'alpha': (1e-2, 1e-4)
+    # }
+    # clf = SGDClassifier(loss='hinge', penalty='l2', max_iter=5, random_state=42)
+    # get_best_parameters(clf, parameters, X_train_tfidf, y_train)
+
+    clf = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-2, max_iter=5, random_state=42).fit(X_train_tfidf, y_train)
     joblib.dump(clf, "clf")
     joblib.dump(count_vect, 'count_vect')
     if test_probability:
@@ -239,11 +254,11 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
         fd.save(excel_name)
     except Exception, ex:
         logger.error('save_excel ex: {}'.format(ex))
-
-# data,target,target_name = get_data_excel(r'C:\Users\Avazu Holding\Desktop\call flash v2.xlsx','Sheet1')
-app_name = 'com.tencent.mm'
-data, target, target_name = load_data(r'D:\capture_google_app\appbot')
-generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
-record = get_record(app_name)
-test_data, predicted = load_classifier_model(record, target_name)
-save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+if __name__ == '__main__':
+    # data,target,target_name = get_data_excel(r'C:\Users\Avazu Holding\Desktop\call flash v2.xlsx','Sheet1')
+    app_name = 'com.tencent.mm'
+    data, target, target_name = load_data(r'D:\capture_google_app\appbot')
+    generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+    record = get_record(app_name)
+    test_data, predicted = load_classifier_model(record, target_name)
+    save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
