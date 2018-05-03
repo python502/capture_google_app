@@ -246,6 +246,15 @@ class CaptureGoogleReview(object):
         p1.join()
         p2.join()
 
+    def delete_records(self, app_name=None):
+        mysql = MysqldbOperate(DICT_MYSQL)
+        if app_name:
+            sql = 'delete from {} where app_name = "{}"'.format(self.TABLE_NAME_REVIEW, app_name)
+        else:
+            sql = 'delete from {}'.format(self.TABLE_NAME_REVIEW, app_name)
+        return mysql.sql_exec(sql)
+
+
 
 def main():
     startTime = datetime.now()
@@ -261,6 +270,7 @@ def main():
     #     print len(results)
     # print results
     objCaptureGoogleReview.deal_main(app_name)
+    # objCaptureGoogleReview.delete_records(app_name)
     endTime = datetime.now()
     print 'seconds', (endTime - startTime).seconds
 if __name__ == '__main__':
