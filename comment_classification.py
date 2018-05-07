@@ -17,20 +17,23 @@ from sklearn.utils import Bunch
 from sklearn import model_selection
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.externals import joblib
 from nltk.stem.lancaster import LancasterStemmer
+from os import listdir, remove
+from os.path import isdir, join, exists
+from sklearn.linear_model import SGDClassifier
 from nltk.corpus import stopwords
+from sklearn.naive_bayes import MultinomialNB
+
 import  numpy as np
 import nltk
 import xlrd
 import xlwt
-
+import json
 import re
-from os import listdir, remove
-from os.path import isdir, join, exists
-file_name = 'reviews'
 
+file_name = 'reviews'
+file_rename = 'reviews_bak'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
 #             'Security & Accounts': 2,
@@ -55,7 +58,7 @@ def stopword(words):
         logger.error('error:words {}'.format(words))
         raise
 
-#分词
+#将评论语句分词
 def deal_review(record):
     try:
         words = []
@@ -68,16 +71,15 @@ def deal_review(record):
         logger.error('error record: {},ex: {}'.format(record, ex))
         raise
 
+#过滤掉表情
 def filter_emoji(desstr, restr=''):
-    '''''
-    过滤表情
-    '''
     try:
         co = re.compile(u'[\U00010000-\U0010ffff]')
     except re.error:
         co = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]|\u263a\ufe0f|\ud83c\ude39|\ud83d\ude12|[\u2000-\u2764]|\u0060\u0060|\ufe0f|\u0026|\d+|invalid review')
     return co.sub(restr, desstr)
 
+#词干化
 def stemmint(words):
     st = LancasterStemmer()
     results = []
@@ -96,23 +98,24 @@ def format_info(infos, add_null=False):
             info = filter_emoji(info)
             info = deal_review(info)
             info = stopword(info)
-            # #英文单词词干化
             info = stemmint(info)
             check_info.append(info)
         except Exception, ex:
             logger.error('error info:{}, ex: {}'.format(info, ex))
             if add_null:
                 check_info.append([])
+
+    # 去掉仅出现一次的词语
     # all_stems = sum(check_info, [])
     # stems_once = set(stem for stem in set(all_stems) if all_stems.count(stem) == 1)
     # texts = [[stem for stem in text if stem not in stems_once] for text in check_info]
     try:
         texts = check_info
         return [' '.join(text) for text in texts]
-        # return check_info
     except Exception:
         logger.error('text:{}'.format(info))
 
+#去空数据
 def check_null(a):
     if a[0]:
         return True
@@ -123,8 +126,11 @@ def get_best_parameters(clf, parameters,X,y):
     gs_clf = gs_clf.fit(X, y)
     best_parameters, score = gs_clf.best_params_, gs_clf.best_score_
     for param_name in sorted(parameters.keys()):
-        print("%s: %r" % (param_name, best_parameters[param_name]))
-    print ('best score %s' % (score,))
+        logger.info("%s: %r" % (param_name, best_parameters[param_name]))
+    logger.info('best score %s' % (score,))
+    return best_parameters
+
+#生成分类训练模型
 def generate_classifier_model(train_data, target, test_probability=0.0, target_names = {}):
     train_data = format_info(train_data)
     datas = filter(check_null, zip(train_data, target))
@@ -136,19 +142,18 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
         train.data, train.target, test_size=test_probability)
     count_vect = CountVectorizer(decode_error='ignore')
     X_train_counts = count_vect.fit_transform(X_train)
-    # print count_vect.get_feature_names()
+    # logger.info('feature name:{}'.format(count_vect.get_feature_names()))
     tfidf_transformer = TfidfTransformer()
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
     # clf = MultinomialNB().fit(X_train_tfidf, y_train)
-    from sklearn.linear_model import SGDClassifier
 
     # parameters = {
     #     'alpha': (1e-2, 1e-4)
     # }
     # clf = SGDClassifier(loss='hinge', penalty='l2', max_iter=5, random_state=42)
-    # get_best_parameters(clf, parameters, X_train_tfidf, y_train)
+    # best_parameters = get_best_parameters(clf, parameters, X_train_tfidf, y_train)
 
-    clf = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-2, max_iter=5, random_state=42).fit(X_train_tfidf, y_train)
+    clf = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-4, max_iter=5, random_state=42).fit(X_train_tfidf, y_train)
     joblib.dump(clf, "clf")
     joblib.dump(count_vect, 'count_vect')
     if test_probability:
@@ -156,8 +161,11 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
         X_new_tfidf = tfidf_transformer.transform(X_new_counts)
         predicted = clf.predict(X_new_tfidf)
         logger.info('np.mean: {}'.format(np.mean(predicted == y_test)))
+        for l, m, n in zip(X_test, y_test, predicted):
+            if m != n:
+                logger.info(("%r => %s => %s") % (l, target_names[m], target_names[n]))
 
-
+#导入分类模型 进行数据分类
 def load_classifier_model(test_data, target_name=None):
     clf = joblib.load('clf')
     count_vect = joblib.load('count_vect')
@@ -167,6 +175,8 @@ def load_classifier_model(test_data, target_name=None):
     datas = zip(*datas)
     test_data = datas[0]
     old_test_data = datas[1]
+    if not test_data:
+        raise ValueError('after format test_data is null')
     X_new_counts = count_vect.transform(test_data)
     tfidf_transformer = TfidfTransformer()
     X_new_tfidf = tfidf_transformer.fit_transform(X_new_counts)
@@ -206,12 +216,8 @@ def get_local_reviews(base_path, data_file_name):
     with open(join(base_path, data_file_name, file_name)) as fd:
         lines = fd.readlines()
         for line in lines:
-            pattern = re.compile('"body":"[\s\S]*?","author":')
-            bodys = pattern.findall(line)
-            for body in bodys:
-                body = body[8:-11]
-                body = body.replace('\\n', '')
-                reviews.append(body)
+            line = line.replace('\\n', '')
+            reviews.append(line)
     return reviews
 
 def load_data(base_path, categories = None):
@@ -230,6 +236,56 @@ def load_data(base_path, categories = None):
         datas.extend(data)
         target.extend(len(data) * [i])
     return datas, target, target_names
+
+
+
+def resave_data(base_path):
+    folders = [f for f in sorted(listdir(base_path))
+               if isdir(join(base_path, f))]
+    for folder in folders:
+        data = get_appbot_reviews(base_path, folder)
+        with open(join(base_path, folder, file_name), mode='w') as fd:
+            for d in data:
+                try:
+                    # if not isinstance(d,unicode):
+                    #     d = d.encode('utf-8')
+                    d = filter_emoji(d)
+                    fd.write(d.strip())
+                    fd.write('\n')
+                except UnicodeEncodeError:
+                    logger.error('folder:{} write {}'.format(folder, d.encode('utf-8')))
+
+                    continue
+
+
+# def get_appbot_reviews(base_path, data_file_name):
+#     reviews = []
+#     with open(join(base_path, data_file_name, file_rename)) as fd:
+#         lines = fd.readlines()
+#         for line in lines:
+#             pattern = re.compile('"body":"[\s\S]*?","author":')
+#             bodys = pattern.findall(line)
+#             for body in bodys:
+#                 body = body[8:-11]
+#                 body = body.replace('\\n', '')
+#                 reviews.append(body)
+#     return reviews
+
+
+def get_appbot_reviews(base_path, data_file_name):
+    reviews = []
+    with open(join(base_path, data_file_name, file_rename)) as fd:
+        lines = fd.readlines()
+        for line in lines:
+            info = json.loads(line)
+            info = info.get('reviews')
+            for review in info:
+                topic_ids = review.get('topic_ids')
+                if 1 != len(topic_ids):
+                    continue
+                body = review.get('body').replace('\n', '').strip()
+                reviews.append(body)
+    return reviews
 
 def get_record(app_name, begin_num=0, record_num=100000000000000):
     select_sql = 'select review from record_review where app_name="{}" order by review_time desc limit {},{};'.format(app_name, begin_num, record_num)
@@ -254,11 +310,32 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
         fd.save(excel_name)
     except Exception, ex:
         logger.error('save_excel ex: {}'.format(ex))
-if __name__ == '__main__':
-    # data,target,target_name = get_data_excel(r'C:\Users\Avazu Holding\Desktop\call flash v2.xlsx','Sheet1')
-    app_name = 'com.tencent.mm'
+
+#从文件夹中提取训练集
+def main():
+    app_name = 'com.appconnect.easycall'
     data, target, target_name = load_data(r'D:\capture_google_app\appbot')
-    generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+    # generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
     record = get_record(app_name)
     test_data, predicted = load_classifier_model(record, target_name)
     save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+
+#从xlsx中提取训练集数据
+def main1():
+    app_name = 'com.appconnect.easycall'
+    data, target, target_name = get_data_excel(r'C:\Users\Avazu Holding\Desktop\call flash v2.xlsx', 'Sheet1')
+    generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+    record = get_record(app_name)
+    test_data, predicted = load_classifier_model(record, target_name)
+    # save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+
+#重新格式化数据  将从appbot上复制的数据 提取出来
+def main2():
+    resave_data(r'D:\capture_google_app\appbot')
+
+if __name__ == '__main__':
+    #knn 0.58
+    #svm 0.25
+    #SGD 0.63
+    #MultinomialNB 0.56
+    main2()
