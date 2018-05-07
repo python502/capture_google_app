@@ -181,7 +181,7 @@ class CaptureGoogleReview(object):
         for data in source_datas:
             try:
                 result = {'app_name': app_name, 'before_key': st}
-                result['user_name'] = data[1][0].encode('utf-8').replace('\\','')
+                result['user_name'] = data[1][0].encode('utf-8').replace('\\', '')
                 result['score'] = data[2]
                 review = ''
                 if data[4]:
@@ -259,7 +259,13 @@ class CaptureGoogleReview(object):
 def main():
     startTime = datetime.now()
     useragent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
-    app_name = 'com.tencent.mm'
+    # app_name = 'com.cleanmaster.mguard'
+    # app_name = 'com.hyperspeed.rocketclean'
+    # app_name = 'com.apps.go.clean.boost.master'
+    # app_name = 'com.colorphone.smooth.dialer'
+    # app_name = 'com.call.flash.ringtones'
+    app_name = 'com.appconnect.easycall'
+
     objCaptureGoogleReview = CaptureGoogleReview(useragent)
     # results = []
     # result, st = objCaptureGoogleReview.deal_first_reviews(app_name)
