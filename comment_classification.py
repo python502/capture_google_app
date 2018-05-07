@@ -161,9 +161,9 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
         X_new_tfidf = tfidf_transformer.transform(X_new_counts)
         predicted = clf.predict(X_new_tfidf)
         logger.info('np.mean: {}'.format(np.mean(predicted == y_test)))
-        for l, m, n in zip(X_test, y_test, predicted):
-            if m != n:
-                logger.info(("%r => %s => %s") % (l, target_names[m], target_names[n]))
+        # for l, m, n in zip(X_test, y_test, predicted):
+        #     if m != n:
+        #         logger.info(("%r => %s => %s") % (l, target_names[m], target_names[n]))
 
 #导入分类模型 进行数据分类
 def load_classifier_model(test_data, target_name=None):
@@ -239,12 +239,12 @@ def load_data(base_path, categories = None):
 
 
 
-def resave_data(base_path):
+def resave_data(base_path, mode = 'w'):
     folders = [f for f in sorted(listdir(base_path))
                if isdir(join(base_path, f))]
     for folder in folders:
         data = get_appbot_reviews(base_path, folder)
-        with open(join(base_path, folder, file_name), mode='w') as fd:
+        with open(join(base_path, folder, file_name), mode=mode) as fd:
             for d in data:
                 try:
                     # if not isinstance(d,unicode):
@@ -283,6 +283,9 @@ def get_appbot_reviews(base_path, data_file_name):
                 topic_ids = review.get('topic_ids')
                 if 1 != len(topic_ids):
                     continue
+                # author = review.get('author')
+                # if not author:
+                #     continue
                 body = review.get('body').replace('\n', '').strip()
                 reviews.append(body)
     return reviews
@@ -315,7 +318,7 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
 def main():
     app_name = 'com.appconnect.easycall'
     data, target, target_name = load_data(r'D:\capture_google_app\appbot')
-    # generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+    generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
     record = get_record(app_name)
     test_data, predicted = load_classifier_model(record, target_name)
     save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
