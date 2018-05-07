@@ -338,4 +338,4 @@ if __name__ == '__main__':
     #svm 0.25
     #SGD 0.63
     #MultinomialNB 0.56
-    main2()
+    main()

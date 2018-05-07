@@ -251,7 +251,7 @@ class CaptureGoogleReview(object):
         if app_name:
             sql = 'delete from {} where app_name = "{}"'.format(self.TABLE_NAME_REVIEW, app_name)
         else:
-            sql = 'delete from {}'.format(self.TABLE_NAME_REVIEW, app_name)
+            sql = 'delete from {}'.format(self.TABLE_NAME_REVIEW)
         return mysql.sql_exec(sql)
 
 
