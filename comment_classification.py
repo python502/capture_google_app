@@ -31,6 +31,7 @@ import xlrd
 import xlwt
 import json
 import re
+import datetime
 
 file_name = 'reviews'
 file_rename = 'reviews_bak'
@@ -170,6 +171,7 @@ def load_classifier_model(test_data, target_name=None):
     clf = joblib.load('clf')
     count_vect = joblib.load('count_vect')
     old_test_data = test_data
+    test_data = [x[0] for x in test_data]
     test_data = format_info(test_data, True)
     datas = filter(check_null, zip(test_data, old_test_data))
     datas = zip(*datas)
@@ -183,10 +185,10 @@ def load_classifier_model(test_data, target_name=None):
     predicted = clf.predict(X_new_tfidf)
     if target_name:
         for doc, category, c in zip(test_data, predicted, old_test_data):
-            logger.info(("%r => %r => %s") % (c, doc, target_name[category]))
+            logger.info(("%r => %r => %s") % (c[0], doc, target_name[category]))
     else:
         for doc, category, c in zip(test_data, predicted, old_test_data):
-            logger.info(("%r => %r => %s") % (c, doc, category))
+            logger.info(("%r => %r => %s") % (c[0], doc, category))
     return old_test_data, predicted
 
 def get_data_excel(excel_name, sheet_name):
@@ -290,10 +292,19 @@ def get_appbot_reviews(base_path, data_file_name):
                 reviews.append(body)
     return reviews
 
-def get_record(app_name, begin_num=0, record_num=100000000000000):
-    select_sql = 'select review from record_review where app_name="{}" order by review_time desc limit {},{};'.format(app_name, begin_num, record_num)
+def get_record(app_name, delta=0, begin_num=0, record_num=100000000000000):
+    if delta:
+        now = datetime.datetime.now()
+        delta = datetime.timedelta(days=-delta)
+        delta_time = now + delta
+        delta_time = delta_time.strftime('%Y%m%d')
+        select_sql = 'select review,score,review_time,helpful from record_review where app_name="{}" and review_time >"{}" order by review_time desc limit {},{};'.format(app_name, delta_time, begin_num, record_num)
+    else:
+        select_sql = 'select review,score,review_time,helpful from record_review where app_name="{}" order by review_time desc limit {},{};'.format(
+            app_name, begin_num, record_num)
+
     record = mysql.sql_query(select_sql)
-    record = [x[0] for x in record]
+    record = [x for x in record]
     return record
 
 def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
@@ -302,14 +313,19 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
             remove(excel_name)
         fd = xlwt.Workbook(encoding='utf-8')
         table = fd.add_sheet(sheet_name, cell_overwrite_ok=True)
+        title = ['review', 'score', 'review_time', 'helpful', 'classification']
+        for i, data in enumerate(title):
+            table.write(0, i, data)
         zip_data = zip(test_data, predicted)
-        for i, data in enumerate(zip_data):
+        for i, data in enumerate(zip_data, 1):
+            for j, in_data in enumerate(data[0]):
+                if isinstance(in_data, datetime.datetime):
+                    in_data = in_data.strftime("%Y%m%d%H%M%S")
+                table.write(i, j, in_data)
             if target_name:
-                table.write(i, 0, data[0])
-                table.write(i, 1, target_name[data[1]])
+                table.write(i, j+1, target_name[data[1]])
             else:
-                table.write(i, 0, data[0])
-                table.write(i, 1, data[1])
+                table.write(i, j+1, data[1])
         fd.save(excel_name)
     except Exception, ex:
         logger.error('save_excel ex: {}'.format(ex))
@@ -319,7 +335,7 @@ def main():
     app_name = 'com.appconnect.easycall'
     data, target, target_name = load_data(r'D:\capture_google_app\appbot')
     generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
-    record = get_record(app_name)
+    record = get_record(app_name, 7)
     test_data, predicted = load_classifier_model(record, target_name)
     save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
 
@@ -328,14 +344,16 @@ def main1():
     app_name = 'com.appconnect.easycall'
     data, target, target_name = get_data_excel(r'C:\Users\Avazu Holding\Desktop\call flash v2.xlsx', 'Sheet1')
     generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
-    record = get_record(app_name)
+    record = get_record(app_name, 7)
     test_data, predicted = load_classifier_model(record, target_name)
-    # save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+    save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
 
 #重新格式化数据  将从appbot上复制的数据 提取出来
 def main2():
     resave_data(r'D:\capture_google_app\appbot')
-
+def main3():
+    data = get_record('com.appconnect.easycall', 7)
+    print type(data[0][2])
 if __name__ == '__main__':
     #knn 0.58
     #svm 0.25
