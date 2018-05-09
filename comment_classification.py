@@ -33,8 +33,10 @@ import json
 import re
 import datetime
 
+
 file_name = 'reviews'
 file_rename = 'reviews_bak'
+result_xls = r'C:\Users\Avazu Holding\Desktop\app.xls'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
 #             'Security & Accounts': 2,
@@ -337,7 +339,7 @@ def main():
     generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
     record = get_record(app_name, 7)
     test_data, predicted = load_classifier_model(record, target_name)
-    save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+    save_excel(result_xls, app_name, test_data, predicted, target_name)
 
 #从xlsx中提取训练集数据
 def main1():
@@ -346,7 +348,7 @@ def main1():
     generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
     record = get_record(app_name, 7)
     test_data, predicted = load_classifier_model(record, target_name)
-    save_excel(r'C:\Users\Avazu Holding\Desktop\app.xls', app_name, test_data, predicted, target_name)
+    save_excel(result_xls, app_name, test_data, predicted, target_name)
 
 #重新格式化数据  将从appbot上复制的数据 提取出来
 def main2():
