@@ -30,6 +30,7 @@ def retry_if_502_error(exception):
 
 DICT_MYSQL = {'host': '127.0.0.1', 'user': 'root', 'passwd': '111111', 'db': 'capture', 'port': 3306}
 
+
 class CaptureGoogleReview(object):
     HEADER_GET = '''
             Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
@@ -43,6 +44,7 @@ class CaptureGoogleReview(object):
             '''
     id = '136880256'
     TABLE_NAME_REVIEW = 'record_review'
+    SORT_TYPE = {'newest': '2', 'rating': '3', 'helpful': '1', 'null': 'null'}
     def __init__(self, user_agent):
         self.header_get = CaptureGoogleReview._getDict4str(CaptureGoogleReview.HEADER_GET.format(user_agent))
         self.header_post = CaptureGoogleReview._getDict4str(CaptureGoogleReview.HEADER_POST.format(user_agent))
@@ -84,37 +86,77 @@ class CaptureGoogleReview(object):
             co = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]|\u263a\ufe0f|\ud83c\ude39')
         return co.sub(restr, desstr)
 
-    def deal_first_reviews(self, app_name):
-        url = 'https://play.google.com/store/apps/details?id={}&showAllReviews=true&hl=en'.format(app_name)
-        res = self.s.get(url, headers=self.header_get)
-        if res.status_code == 200:
-            page_source = res.text.encode('utf-8')
-        else:
-            logger.error('url:{} get status error:{}'.format(url, res.status_code))
-            raise PlayGoogleException('get status code error')
-
-        pattern = re.compile(r'AF_initDataCallback\(\{key: [\s\S]+?;</script>', re.S)
-        AF_initDataCallbacks = pattern.findall(page_source)
-        for AF_initDataCallback in AF_initDataCallbacks:
-            if AF_initDataCallback.find('[[["gp:') != -1:
-                break
-        else:
-            logger.error('url:{} get first reviews form error')
-            raise PlayGoogleException('get first reviews form error, not find gp:')
-        AF_initDataCallback = AF_initDataCallback.split('data:function(){return')[1].split('}});</script>')[0]
-        AF_initDataCallback = json.loads(AF_initDataCallback)
-        if len(AF_initDataCallback) == 1:
-            return (AF_initDataCallback[0], None)
-        elif len(AF_initDataCallback) == 2:
-            return (AF_initDataCallback[0], AF_initDataCallback[1][0])
-        else:
-            raise PlayGoogleException('len of AF_initDataCallback is {}'.format(len(AF_initDataCallback)))
+    # def deal_first_reviews(self, app_name):
+    #     url = 'https://play.google.com/store/apps/details?id={}&showAllReviews=true&hl=en'.format(app_name)
+    #     res = self.s.get(url, headers=self.header_get)
+    #     if res.status_code == 200:
+    #         page_source = res.text.encode('utf-8')
+    #     else:
+    #         logger.error('url:{} get status error:{}'.format(url, res.status_code))
+    #         raise PlayGoogleException('get status code error')
+    #
+    #     pattern = re.compile(r'AF_initDataCallback\(\{key: [\s\S]+?;</script>', re.S)
+    #     AF_initDataCallbacks = pattern.findall(page_source)
+    #     for AF_initDataCallback in AF_initDataCallbacks:
+    #         if AF_initDataCallback.find('[[["gp:') != -1:
+    #             break
+    #     else:
+    #         logger.error('url:{} get first reviews form error')
+    #         raise PlayGoogleException('get first reviews form error, not find gp:')
+    #     AF_initDataCallback = AF_initDataCallback.split('data:function(){return')[1].split('}});</script>')[0]
+    #     AF_initDataCallback = json.loads(AF_initDataCallback)
+    #     if len(AF_initDataCallback) == 1:
+    #         return (AF_initDataCallback[0], None)
+    #     elif len(AF_initDataCallback) == 2:
+    #         return (AF_initDataCallback[0], AF_initDataCallback[1][0])
+    #     else:
+    #         raise PlayGoogleException('len of AF_initDataCallback is {}'.format(len(AF_initDataCallback)))
+    #
+    # @retry(retry_on_exception=retry_if_502_error, stop_max_attempt_number=3, wait_fixed=2000)
+    # def deal_other_reviews(self, app_name, before_str, sort_type='null'):
+    #     try:
+    #         url = 'https://play.google.com/_/PlayStoreUi/data?hl=en'
+    #         string_data = '[[[' + CaptureGoogleReview.id + ',[{"' + CaptureGoogleReview.id + '":[null,null,[2,' + \
+    #                       SORT_TYPE[sort_type] + ',[40,' + before_str + ']],["' + app_name + '",7]]}],null,null,0]]]'
+    #
+    #         # string_data = '[[[' + CaptureGoogleReview.id + ',[{"' + CaptureGoogleReview.id + '":[null,null,[2,'+SORT_TYPE[sort_type]+',[40,"' + before_str + '"]],["'+app_name+'",7]]}],null,null,0]]]'
+    #         res = self.s.post(
+    #             url,
+    #             data={'f.req': string_data},
+    #             headers=self.header_post,
+    #         )
+    #         if res.status_code == 200:
+    #             page_source = res.text.encode('utf-8')
+    #         else:
+    #             if res.status_code == 502:
+    #                 raise TypeError('get status code 502 retry')
+    #             else:
+    #                 raise PlayGoogleException('get status code error')
+    #         l = page_source.find('[["af.adr",')
+    #         page_source = page_source[l:]
+    #         page_source = json.loads(page_source)
+    #         page_source = page_source[0][2][CaptureGoogleReview.id]
+    #         if len(page_source) == 1:
+    #             return (page_source[0], None)
+    #         elif len(page_source) == 2:
+    #             return (page_source[0], page_source[1][0])
+    #         else:
+    #             raise PlayGoogleException('len of page_source is {}'.format(len(page_source)))
+    #     except Exception, e:
+    #         logger.error('e:{}'.format(e))
+    #         logger.error('deal_other_reviews get status error:{},before_str:{}'.format(res.status_code, before_str))
+    #         raise
 
     @retry(retry_on_exception=retry_if_502_error, stop_max_attempt_number=3, wait_fixed=2000)
-    def deal_other_reviews(self, before_str):
+    def deal_reviews(self, app_name, before_str='null', sort_type='null'):
         try:
             url = 'https://play.google.com/_/PlayStoreUi/data?hl=en'
-            string_data = '[[[' + CaptureGoogleReview.id + ',[{"' + CaptureGoogleReview.id + '":[null,null,[2,null,[40,"' + before_str + '"]],["com.imangi.templerun2",7]]}],null,null,0]]]'
+            if before_str == 'null':
+                string_data = '[[[' + CaptureGoogleReview.id + ',[{"' + CaptureGoogleReview.id + '":[null,null,[2,' + \
+                              CaptureGoogleReview.SORT_TYPE[sort_type] + ',[40,' + before_str + ']],["' + app_name + '",7]]}],null,null,0]]]'
+            else:
+                string_data = '[[[' + CaptureGoogleReview.id + ',[{"' + CaptureGoogleReview.id + '":[null,null,[2,' + \
+                              CaptureGoogleReview.SORT_TYPE[sort_type] + ',[40,"' + before_str + '"]],["'+app_name+'",7]]}],null,null,0]]]'
             res = self.s.post(
                 url,
                 data={'f.req': string_data},
@@ -137,9 +179,9 @@ class CaptureGoogleReview(object):
                 return (page_source[0], page_source[1][0])
             else:
                 raise PlayGoogleException('len of page_source is {}'.format(len(page_source)))
-        except Exception,e:
+        except Exception, e:
             logger.error('e:{}'.format(e))
-            logger.error('deal_other_reviews get status error:{},before_str:{}'.format(res.status_code, before_str))
+            logger.error('deal_reviews get status error:{},before_str:{}'.format(res.status_code, before_str))
             raise
 
     def analyze_data(self, queue, app_name=''):
@@ -202,23 +244,17 @@ class CaptureGoogleReview(object):
         return results
 
     def get_data(self, queue, app_name, query_conditions={}):
-        before_id = query_conditions.get('before_id')
+        st = query_conditions.get('before_id', 'null')
         begin_page = query_conditions.get('begin_page', 0)
         end_page = query_conditions.get('end_page', 10000000)
+        sort_type = query_conditions.get('sort_type', 'null')
         now_page = 1
-        if before_id:
-            st = before_id
-        else:
-            result, st = self.deal_first_reviews(app_name)
-            if now_page>=begin_page and now_page<=end_page:
-                queue.put([None, result])
-
         while st:
             st_src = st
-            result, st = self.deal_other_reviews(st)
-            now_page += 1
-            logger.info('now_page: {}'.format(now_page))
-            if now_page>=begin_page and now_page<=end_page:
+            if now_page >= begin_page and now_page <= end_page:
+                logger.info('now_page: {}'.format(now_page))
+                result, st = self.deal_reviews(app_name, st, sort_type)
+                now_page += 1
                 queue.put([st_src, result])
             elif now_page>end_page:
                 queue.put(None)
@@ -235,7 +271,7 @@ class CaptureGoogleReview(object):
         manager = multiprocessing.Manager()
         queue = manager.Queue(maxsize = 1000)
         # queue = manager.Queue()
-        # query_conditions = {'begin_page': 0, 'end_page': 3}
+        # query_conditions = {'begin_page': 0, 'end_page': 50, 'sort_type': 'newest'}
         # p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name, query_conditions,))
         p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name,))
         p2 = multiprocessing.Process(target=self.analyze_data, args=(queue, app_name,))
@@ -270,7 +306,7 @@ def main():
     # results = []
     # result, st = objCaptureGoogleReview.deal_first_reviews(app_name)
     # while st:
-    #     result, st = objCaptureGoogleReview.deal_other_reviews(st)
+    #     result, st = objCaptureGoogleReview.deal_other_reviews(app_name, st)
     #     print result[0]
     #     results.extend(result)
     #     print len(results)

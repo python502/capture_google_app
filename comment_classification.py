@@ -315,7 +315,7 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
             remove(excel_name)
         fd = xlwt.Workbook(encoding='utf-8')
         table = fd.add_sheet(sheet_name, cell_overwrite_ok=True)
-        title = ['review', 'score', 'review_time', 'helpful', 'classification']
+        title = ['review', 'score', 'review_time', 'helpful', 'classification', 'length']
         for i, data in enumerate(title):
             table.write(0, i, data)
         zip_data = zip(test_data, predicted)
@@ -328,6 +328,7 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
                 table.write(i, j+1, target_name[data[1]])
             else:
                 table.write(i, j+1, data[1])
+            table.write(i, j + 2, len(data[0][0]))
         fd.save(excel_name)
     except Exception, ex:
         logger.error('save_excel ex: {}'.format(ex))
