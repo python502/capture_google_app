@@ -252,7 +252,7 @@ class CaptureGoogleReview(object):
         while st:
             st_src = st
             if now_page >= begin_page and now_page <= end_page:
-                logger.info('now_page: {}'.format(now_page))
+                logger.debug('now_page: {}'.format(now_page))
                 result, st = self.deal_reviews(app_name, st, sort_type)
                 now_page += 1
                 queue.put([st_src, result])
@@ -271,9 +271,9 @@ class CaptureGoogleReview(object):
         manager = multiprocessing.Manager()
         queue = manager.Queue(maxsize = 1000)
         # queue = manager.Queue()
-        # query_conditions = {'begin_page': 0, 'end_page': 50, 'sort_type': 'newest'}
-        # p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name, query_conditions,))
-        p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name,))
+        query_conditions = {'begin_page': 0, 'end_page': 50, 'sort_type': 'newest'}
+        p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name, query_conditions,))
+        # p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name,))
         p2 = multiprocessing.Process(target=self.analyze_data, args=(queue, app_name,))
 
         p1.start()
@@ -299,8 +299,8 @@ def main():
     # app_name = 'com.hyperspeed.rocketclean'
     # app_name = 'com.apps.go.clean.boost.master'
     # app_name = 'com.colorphone.smooth.dialer'
-    # app_name = 'com.call.flash.ringtones'
-    app_name = 'com.appconnect.easycall'
+    app_name = 'com.call.flash.ringtones'
+    # app_name = 'com.appconnect.easycall'
 
     objCaptureGoogleReview = CaptureGoogleReview(useragent)
     # results = []

@@ -19,11 +19,12 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.externals import joblib
 from nltk.stem.lancaster import LancasterStemmer
-from os import listdir, remove
-from os.path import isdir, join, exists
 from sklearn.linear_model import SGDClassifier
 from nltk.corpus import stopwords
 from sklearn.naive_bayes import MultinomialNB
+from os import listdir
+from os.path import isdir, join, exists
+from xlutils.copy import copy
 
 import  numpy as np
 import nltk
@@ -36,7 +37,7 @@ import datetime
 
 file_name = 'reviews'
 file_rename = 'reviews_bak'
-result_xls = r'C:\Users\Avazu Holding\Desktop\app.xls'
+result_xls = r'C:\Users\Avazu Holding\Desktop\review_classification.xls'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
 #             'Security & Accounts': 2,
@@ -187,10 +188,10 @@ def load_classifier_model(test_data, target_name=None):
     predicted = clf.predict(X_new_tfidf)
     if target_name:
         for doc, category, c in zip(test_data, predicted, old_test_data):
-            logger.info(("%r => %r => %s") % (c[0], doc, target_name[category]))
+            logger.debug(("%r => %r => %s") % (c[0], doc, target_name[category]))
     else:
         for doc, category, c in zip(test_data, predicted, old_test_data):
-            logger.info(("%r => %r => %s") % (c[0], doc, category))
+            logger.debug(("%r => %r => %s") % (c[0], doc, category))
     return old_test_data, predicted
 
 def get_data_excel(excel_name, sheet_name):
@@ -311,9 +312,13 @@ def get_record(app_name, delta=0, begin_num=0, record_num=100000000000000):
 
 def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
     try:
+        #xlwt.Workbook是创建一个新的空excel
         if exists(excel_name):
-            remove(excel_name)
-        fd = xlwt.Workbook(encoding='utf-8')
+            rd = xlrd.open_workbook(excel_name, formatting_info=True)
+            fd = copy(rd)
+        else:
+            fd = xlwt.Workbook(encoding='utf-8')
+
         table = fd.add_sheet(sheet_name, cell_overwrite_ok=True)
         title = ['review', 'score', 'review_time', 'helpful', 'classification', 'length']
         for i, data in enumerate(title):

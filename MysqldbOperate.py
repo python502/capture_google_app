@@ -119,7 +119,7 @@ class MysqldbOperate(object):
                 self.cur.execute(sql)
                 self.conn.commit()
             counts += len(batch_list)
-            logger.info('finished {}: {}'.format(exec_sql[0], counts))
+            logger.debug('finished {}: {}'.format(exec_sql[0], counts))
             if counts:
                 return True
             else:
