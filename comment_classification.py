@@ -110,11 +110,11 @@ def format_info(infos, add_null=False):
                 check_info.append([])
 
     # 去掉仅出现一次的词语
-    # all_stems = sum(check_info, [])
-    # stems_once = set(stem for stem in set(all_stems) if all_stems.count(stem) == 1)
-    # texts = [[stem for stem in text if stem not in stems_once] for text in check_info]
+    all_stems = sum(check_info, [])
+    stems_once = set(stem for stem in set(all_stems) if all_stems.count(stem) == 1)
+    texts = [[stem for stem in text if stem not in stems_once] for text in check_info]
     try:
-        texts = check_info
+        # texts = check_info
         return [' '.join(text) for text in texts]
     except Exception:
         logger.error('text:{}'.format(info))
