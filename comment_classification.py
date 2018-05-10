@@ -22,7 +22,7 @@ from nltk.stem.lancaster import LancasterStemmer
 from sklearn.linear_model import SGDClassifier
 from nltk.corpus import stopwords
 from sklearn.naive_bayes import MultinomialNB
-from os import listdir
+from os import listdir, remove
 from os.path import isdir, join, exists
 from xlutils.copy import copy
 
