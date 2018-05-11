@@ -37,7 +37,7 @@ import datetime
 
 file_name = 'reviews'
 file_rename = 'reviews_bak'
-result_xls = r'C:\Users\Avazu Holding\Desktop\review_classification.xls'
+result_xls = r'C:\Users\Avazu Holding\Desktop\review_classification_{}.xls'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
 #             'Security & Accounts': 2,

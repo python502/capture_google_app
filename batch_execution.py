@@ -28,20 +28,22 @@ def do_training(flag = False):
         generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
     return target_name
 
-def do_classification(app_list, target_name={}):
+def do_classification(app_list, xls_file=None, target_name={}):
     logger.info('do classification begin')
-    if exists(result_xls):
-        remove(result_xls)
+    if xls_file and exists(xls_file):
+        remove(xls_file)
     for app_name in app_list:
         record = get_record(app_name, 30)
         test_data, predicted = load_classifier_model(record, target_name)
-        save_excel(result_xls, app_name, test_data, predicted, target_name)
+        if xls_file:
+            save_excel(xls_file, app_name, test_data, predicted, target_name)
     logger.info('do classification end')
 
 
 def main():
     startTime = datetime.now()
-    # app_list = ['com.cleanmaster.mguard']
+    now = startTime.strftime('%Y%m%d%H%M%S')
+    now1 = startTime.strftime('%Y-%m-%d %H:%M:%S')
     app_list = ['com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
     #下载评论
     get_review(app_list)
@@ -49,9 +51,10 @@ def main():
     target_name = do_training()
     # target_name = {0: 'Bugs', 1: 'Customer Support', 2: 'Design & UX', 3: 'Dissatisfied users', 4: 'Feature Requests', 5: 'Satisfied users', 6: 'Security & Accounts', 7: 'Sign Up & Login', 8: 'Update'}
     #生成分类结果
-    do_classification(app_list, target_name)
+    xls_file = result_xls.format(now)
+    do_classification(app_list, xls_file, target_name)
     #发送邮件
-    SendMail.send_mail('review classification result email', '这是评论分类结果邮件……', result_xls)
+    SendMail.send_mail('review classification result email {}'.format(now1), '这是评论分类结果邮件……', xls_file)
     endTime = datetime.now()
     logger.info('all seconds:{}'.format((endTime - startTime).seconds))
 
