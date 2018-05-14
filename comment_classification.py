@@ -25,8 +25,10 @@ from sklearn.naive_bayes import MultinomialNB
 from os import listdir, remove
 from os.path import isdir, join, exists
 from xlutils.copy import copy
+from decimal import Decimal
 
 import  numpy as np
+import pandas as pd
 import nltk
 import xlrd
 import xlwt
@@ -319,24 +321,63 @@ def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):
         else:
             fd = xlwt.Workbook(encoding='utf-8')
 
+        all_data = []
+        for x, y in zip(test_data, predicted):
+            x = list(x)
+            x.append(y)
+            all_data.append(x)
+        records = get_count_mean(all_data)
+
         table = fd.add_sheet(sheet_name, cell_overwrite_ok=True)
-        title = ['review', 'score', 'review_time', 'helpful', 'classification', 'length']
+        title = ['Topic', 'HighCounts', 'HighScore', 'LowCounts', 'LowScore']
         for i, data in enumerate(title):
             table.write(0, i, data)
-        zip_data = zip(test_data, predicted)
-        for i, data in enumerate(zip_data, 1):
-            for j, in_data in enumerate(data[0]):
-                if isinstance(in_data, datetime.datetime):
-                    in_data = in_data.strftime("%Y%m%d%H%M%S")
-                table.write(i, j, in_data)
+        for i, data in enumerate(records, 1):
             if target_name:
-                table.write(i, j+1, target_name[data[1]])
+                table.write(i, 0, target_name[data.get('target')])
             else:
-                table.write(i, j+1, data[1])
-            table.write(i, j + 2, len(data[0][0]))
+                table.write(i, 0, data.get('target'))
+            table.write(i, 1, data.get('big_count'))
+            table.write(i, 2, data.get('big_mean'))
+            table.write(i, 3, data.get('small_count'))
+            table.write(i, 4, data.get('small_mean'))
+        row = i+3
+        title = ['Topic', 'ReviewTime', 'Score', 'Like', 'Length', 'Review']
+        for i, data in enumerate(title):
+            table.write(row, i, data)
+        for i, data in enumerate(all_data, row+1):
+            if target_name:
+                table.write(i, 0, target_name[data[4]])
+            else:
+                table.write(i, 0, data[4])
+            table.write(i, 1, data[2].strftime("%Y%m%d%H%M%S"))
+            table.write(i, 2, data[1])
+            table.write(i, 3, data[3])
+            table.write(i, 4, len(data[0]))
+            table.write(i, 5, data[0])
         fd.save(excel_name)
     except Exception, ex:
         logger.error('save_excel ex: {}'.format(ex))
+
+def get_count_mean(data):
+    columns = ['review', 'score', 'review_time', 'like', 'target_name']
+    d = pd.DataFrame(data, columns=columns)
+    grouped = d.groupby('target_name')
+    records = []
+    for g in grouped:
+        record = {}
+        record['target'] = g[0]
+        g_data_big = g[1].ix[g[1]['score'] >= 4]
+        g_data_big = dict(g_data_big.score.agg(['count', 'mean']))
+        g_data_small = g[1].ix[g[1]['score'] < 4]
+        g_data_small = dict(g_data_small.score.agg(['count', 'mean']))
+
+        record['big_count'] = int(g_data_big.get('count'))
+        record['big_mean'] = Decimal(str(g_data_big.get('mean'))).quantize(Decimal('0.00')) if record['big_count'] else 0.0
+        record['small_count'] = int(g_data_small.get('count'))
+        record['small_mean'] = Decimal(str(g_data_small.get('mean'))).quantize(Decimal('0.00')) if record['small_count'] else 0.0
+        records.append(record)
+    return records
 
 #从文件夹中提取训练集
 def main():
@@ -367,4 +408,4 @@ if __name__ == '__main__':
     #svm 0.25
     #SGD 0.63
     #MultinomialNB 0.56
-    main()
+    main2()
