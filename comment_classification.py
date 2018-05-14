@@ -137,7 +137,7 @@ def get_best_parameters(clf, parameters,X,y):
     return best_parameters
 
 #生成分类训练模型
-def generate_classifier_model(train_data, target, test_probability=0.0, target_names = {}):
+def generate_classifier_model(train_data, target, test_probability=0.0, target_names = {},allow_pass=0.8):
     train_data = format_info(train_data)
     datas = filter(check_null, zip(train_data, target))
     datas = zip(*datas)
@@ -166,10 +166,16 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
         X_new_counts = count_vect.transform(X_test)
         X_new_tfidf = tfidf_transformer.transform(X_new_counts)
         predicted = clf.predict(X_new_tfidf)
-        logger.info('np.mean: {}'.format(np.mean(predicted == y_test)))
+        mean = np.mean(predicted == y_test)
+        logger.info('np.mean: {}'.format(mean))
         # for l, m, n in zip(X_test, y_test, predicted):
         #     if m != n:
         #         logger.info(("%r => %s => %s") % (l, target_names[m], target_names[n]))
+        if mean >= allow_pass:
+            return True
+        else:
+            return False
+    return True
 
 #导入分类模型 进行数据分类
 def load_classifier_model(test_data, target_name=None):
