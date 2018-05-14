@@ -24,7 +24,7 @@ def get_delta_data(delta):
 
 delta_time = get_delta_data(7)
 sender = 'long.zhang@dotcunited.com'
-receivers = ['813955655@qq.com']
+receivers = ['813955655@qq.com', 'dylan.wu@dotcunited.com']
 smtp_server = 'smtp.dotcunited.com'
 password = '1qaz!QAZ'
 # attachments = r'C:\Users\Avazu Holding\Desktop\app.xls'
@@ -36,8 +36,6 @@ class SendMail(object):
         if not os.path.exists(attachments):
             raise ValueError('attachments: {} not exist'.format(attachments))
         name = os.path.basename(attachments)
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        subject = '{} {}'.format(subject, now)
         message = MIMEMultipart()
         message['From'] = Header(sender, 'utf-8')
         message['To'] = Header(','.join(receivers), 'utf-8')
