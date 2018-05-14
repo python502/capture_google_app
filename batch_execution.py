@@ -25,7 +25,9 @@ def get_review(app_list):
 def do_training(flag = False):
     data, target, target_name = load_data(r'D:\capture_google_app\appbot')
     if flag:
-        generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+        pass_rate = generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
+        if not pass_rate:
+            raise ValueError('pass rate is too low')
     return target_name
 
 def do_classification(app_list, xls_file=None, target_name={}):
@@ -33,7 +35,8 @@ def do_classification(app_list, xls_file=None, target_name={}):
     if xls_file and exists(xls_file):
         remove(xls_file)
     for app_name in app_list:
-        record = get_record(app_name, 30)
+        #从数据库中查询最近7天的数据
+        record = get_record(app_name, 7)
         test_data, predicted = load_classifier_model(record, target_name)
         if xls_file:
             save_excel(xls_file, app_name, test_data, predicted, target_name)

@@ -34,11 +34,13 @@ import xlrd
 import xlwt
 import json
 import re
+import os
 import datetime
 
 
 file_name = 'reviews'
 file_rename = 'reviews_bak'
+file_other = 'reviews_other'
 result_xls = r'C:\Users\Avazu Holding\Desktop\review_classification_{}.xls'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
@@ -251,12 +253,19 @@ def load_data(base_path, categories = None):
     return datas, target, target_names
 
 
+def rm_duplicate(scr_datas):
+    data = pd.DataFrame(scr_datas)
+    # 去重
+    data = data.drop_duplicates()
+    return data.to_dict(orient='list').get(0)
 
 def resave_data(base_path, mode = 'w'):
     folders = [f for f in sorted(listdir(base_path))
                if isdir(join(base_path, f))]
     for folder in folders:
         data = get_appbot_reviews(base_path, folder)
+        if not data: continue
+        data = rm_duplicate(data)
         with open(join(base_path, folder, file_name), mode=mode) as fd:
             for d in data:
                 try:
@@ -267,8 +276,17 @@ def resave_data(base_path, mode = 'w'):
                     fd.write('\n')
                 except UnicodeEncodeError:
                     logger.error('folder:{} write {}'.format(folder, d.encode('utf-8')))
-
                     continue
+            other_file = join(base_path, folder, file_other)
+            if os.path.exists(other_file):
+                with open(other_file, mode='r') as rd:
+                    lines = rd.readlines()
+                    if not lines: continue
+                    lines = rm_duplicate(lines)
+                    for line in lines:
+                        fd.write(line)
+
+        
 
 
 # def get_appbot_reviews(base_path, data_file_name):
@@ -287,9 +305,13 @@ def resave_data(base_path, mode = 'w'):
 
 def get_appbot_reviews(base_path, data_file_name):
     reviews = []
-    with open(join(base_path, data_file_name, file_rename)) as fd:
+    file_path = join(base_path, data_file_name, file_rename)
+    if not os.path.exists(file_path):
+        return []
+    with open(file_path) as fd:
         lines = fd.readlines()
         for line in lines:
+            if line == '\n':continue
             info = json.loads(line)
             info = info.get('reviews')
             for review in info:
