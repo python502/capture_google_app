@@ -41,7 +41,7 @@ import datetime
 file_name = 'reviews'
 file_rename = 'reviews_bak'
 file_other = 'reviews_other'
-result_xls = r'C:\Users\Avazu Holding\Desktop\review_classification_{}.xls'
+result_xls = r'D:\capture_google_app\results\review_classification_{}.xls'
 from itertools import izip
 # topic2id = {'Satisfied users': 1,
 #             'Security & Accounts': 2,
@@ -162,6 +162,11 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
     # best_parameters = get_best_parameters(clf, parameters, X_train_tfidf, y_train)
 
     clf = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-4, max_iter=5, random_state=42).fit(X_train_tfidf, y_train)
+    if os.path.exists('./clf'):
+        os.remove('./clf')
+    if os.path.exists('./count_vect'):
+        os.remove('./count_vect')
+
     joblib.dump(clf, "clf")
     joblib.dump(count_vect, 'count_vect')
     if test_probability:
@@ -412,9 +417,9 @@ def main():
     app_name = 'com.appconnect.easycall'
     data, target, target_name = load_data(r'D:\capture_google_app\appbot')
     generate_classifier_model(data, target, target_names=target_name, test_probability=0.3)
-    record = get_record(app_name, 7)
-    test_data, predicted = load_classifier_model(record, target_name)
-    save_excel(result_xls, app_name, test_data, predicted, target_name)
+    # record = get_record(app_name, 7)
+    # test_data, predicted = load_classifier_model(record, target_name)
+    # save_excel(result_xls, app_name, test_data, predicted, target_name)
 
 #从xlsx中提取训练集数据
 def main1():
