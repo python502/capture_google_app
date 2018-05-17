@@ -259,31 +259,43 @@ def load_data(base_path, categories = None):
 
 
 def rm_duplicate(scr_datas):
+    if not scr_datas:
+        return scr_datas
     data = pd.DataFrame(scr_datas)
     # 去重
     data = data.drop_duplicates()
     return data.to_dict(orient='list').get(0)
 
-def resave_data(base_path, mode = 'w'):
+    #resave_type
+    #0 only reviews_bak
+    #1 only reviews_other
+    #2 all
+def resave_data(base_path, resave_type=1):
+    if resave_type in [0, 2]:
+        mode = 'w'
+    else:
+        mode = 'a'
+
     folders = [f for f in sorted(listdir(base_path))
                if isdir(join(base_path, f))]
     for folder in folders:
-        data = get_appbot_reviews(base_path, folder)
-        if not data: continue
-        data = rm_duplicate(data)
+        other_file = join(base_path, folder, file_other)
         with open(join(base_path, folder, file_name), mode=mode) as fd:
-            for d in data:
-                try:
-                    # if not isinstance(d,unicode):
-                    #     d = d.encode('utf-8')
-                    d = filter_emoji(d)
-                    fd.write(d.strip())
-                    fd.write('\n')
-                except UnicodeEncodeError:
-                    logger.error('folder:{} write {}'.format(folder, d.encode('utf-8')))
-                    continue
-            other_file = join(base_path, folder, file_other)
-            if os.path.exists(other_file):
+            if resave_type == 0 or resave_type == 2:
+                data = get_appbot_reviews(base_path, folder)
+                data = rm_duplicate(data)
+                for d in data:
+                    try:
+                        # if not isinstance(d,unicode):
+                        #     d = d.encode('utf-8')
+                        d = filter_emoji(d)
+                        fd.write(d.strip())
+                        fd.write('\n')
+                    except UnicodeEncodeError:
+                        logger.error('folder:{} write {}'.format(folder, d.encode('utf-8')))
+
+
+            if (resave_type == 1 or resave_type == 2) and os.path.exists(other_file):
                 with open(other_file, mode='r') as rd:
                     lines = rd.readlines()
                     if not lines: continue
