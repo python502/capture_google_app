@@ -24,7 +24,7 @@ def get_delta_data(delta):
 
 delta_time = get_delta_data(7)
 sender = 'long.zhang@dotcunited.com'
-receivers = ['813955655@qq.com', 'dylan.wu@dotcunited.com', 'lizhou.chen@dotcunited.com', 'chao.zhang@dotcunited.com']
+receivers = ['813955655@qq.com', 'dylan.wu@dotcunited.com', 'lizhou.chen@dotcunited.com', 'chao.zhang@dotcunited.com', 'Karen.lu@dotcunited.com']
 smtp_server = 'smtp.dotcunited.com'
 password = '1qaz!QAZ'
 # attachments = r'C:\Users\Avazu Holding\Desktop\app.xls'

@@ -47,7 +47,7 @@ def main():
     startTime = datetime.now()
     now = startTime.strftime('%Y%m%d%H%M%S')
     now1 = startTime.strftime('%Y-%m-%d %H:%M:%S')
-    app_list = ['com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
+    app_list = ['com.cleanmaster.security', 'com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
     #下载评论
     get_review(app_list)
     #做训练
@@ -56,6 +56,7 @@ def main():
     #生成分类结果
     xls_file = result_xls.format(now)
     do_classification(app_list, xls_file, target_name)
+    logger.info('classification result file: {}'.format(xls_file))
     #发送邮件
     SendMail.send_mail('review classification result email {}'.format(now1), '这是评论分类结果邮件……', xls_file)
     endTime = datetime.now()
