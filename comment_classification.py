@@ -166,7 +166,7 @@ def generate_classifier_model(train_data, target, test_probability=0.0, target_n
         os.remove('./clf')
     if os.path.exists('./count_vect'):
         os.remove('./count_vect')
-
+    # print clf.score(X_train_tfidf, y_train)
     joblib.dump(clf, "clf")
     joblib.dump(count_vect, 'count_vect')
     if test_probability:
@@ -453,4 +453,4 @@ if __name__ == '__main__':
     #svm 0.25
     #SGD 0.63
     #MultinomialNB 0.56
-    main2()
+    main()

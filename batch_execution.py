@@ -37,6 +37,9 @@ def do_classification(app_list, xls_file=None, target_name={}):
     for app_name in app_list:
         #从数据库中查询最近7天的数据
         record = get_record(app_name, 7)
+        if not record:
+            logger.error('app_name:{} get no record'.format(app_name))
+            continue
         test_data, predicted = load_classifier_model(record, target_name)
         if xls_file:
             save_excel(xls_file, app_name, test_data, predicted, target_name)
