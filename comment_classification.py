@@ -96,7 +96,7 @@ def stemmint(words):
         results.append(word)
     return results
 
-def format_info(infos, add_null=False):
+def format_info(infos, load_module=False):
     check_info = []
     for info in infos:
         try:
@@ -110,16 +110,18 @@ def format_info(infos, add_null=False):
             check_info.append(info)
         except Exception, ex:
             logger.error('error info:{}, ex: {}'.format(info, ex))
-            if add_null:
+            if load_module:
                 check_info.append([])
 
-    # 去掉仅出现一次的词语
-    all_stems = sum(check_info, [])
-    stems_once = set(stem for stem in set(all_stems) if all_stems.count(stem) == 1)
-    texts = [[stem for stem in text if stem not in stems_once] for text in check_info]
+    if not load_module:
+        # 去掉仅出现一次的词语
+        all_stems = sum(check_info, [])
+        stems_once = set(stem for stem in set(all_stems) if all_stems.count(stem) == 1)
+        texts = [[stem for stem in text if stem not in stems_once] for text in check_info]
+    else:
+        texts = check_info
     try:
-        # texts = check_info
-        return [' '.join(text) for text in texts]
+        return [' '.join(text) for text in texts if text]
     except Exception:
         logger.error('text:{}'.format(info))
 
@@ -193,6 +195,8 @@ def load_classifier_model(test_data, target_name=None):
     test_data = format_info(test_data, True)
     datas = filter(check_null, zip(test_data, old_test_data))
     datas = zip(*datas)
+    if not datas:
+        return [], []
     test_data = datas[0]
     old_test_data = datas[1]
     if not test_data:
@@ -355,6 +359,7 @@ def get_record(app_name, delta=0, begin_num=0, record_num=100000000000000):
 
     record = mysql.sql_query(select_sql)
     record = [x for x in record]
+    logger.info('app_name:{}     {}'.format(app_name, len(record)))
     return record
 
 def save_excel(excel_name, sheet_name, test_data, predicted, target_name=None):

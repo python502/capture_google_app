@@ -271,7 +271,7 @@ class CaptureGoogleReview(object):
         manager = multiprocessing.Manager()
         queue = manager.Queue(maxsize = 1000)
         # queue = manager.Queue()
-        query_conditions = {'begin_page': 0, 'sort_type': 'newest'}
+        query_conditions = {'begin_page': 0, 'end_page': 200, 'sort_type': 'newest'}
         p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name, query_conditions,))
         # p1 = multiprocessing.Process(target=self.get_data, args=(queue, app_name,))
         p2 = multiprocessing.Process(target=self.analyze_data, args=(queue, app_name,))
@@ -303,7 +303,10 @@ def main():
     # app_name = 'call_app.notification.light'
 
     # app_name = 'com.call.flash.ringtones'
-    app_name = 'com.colorphone.smooth.dialer'
+    # app_name = 'com.colorphone.smooth.dialer'
+    # app_name = 'mobi.supo.cleaner'
+    # app_name = 'com.xime.latin.lite'
+    app_name = 'com.dotc.latin.ime.tap'
     objCaptureGoogleReview = CaptureGoogleReview(useragent)
     # results = []
     # result, st = objCaptureGoogleReview.deal_first_reviews(app_name)

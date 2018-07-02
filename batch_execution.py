@@ -7,6 +7,7 @@
 # @File    : batch_execution.py
 # @Software: PyCharm
 # @Desc    :
+from __future__ import absolute_import
 from capture_google_review import CaptureGoogleReview
 from comment_classification import *
 from send_email import SendMail
@@ -14,7 +15,7 @@ from datetime import datetime
 
 useragent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
 objCaptureGoogleReview = CaptureGoogleReview(useragent)
-
+DAYS = 7
 
 def get_review(app_list):
     for app_name in app_list:
@@ -36,13 +37,15 @@ def do_classification(app_list, xls_file=None, target_name={}):
         remove(xls_file)
     for app_name in app_list:
         #从数据库中查询最近7天的数据
-        record = get_record(app_name, 7)
+        record = get_record(app_name, DAYS)
         if not record:
             logger.error('app_name:{} get no record'.format(app_name))
             continue
         test_data, predicted = load_classifier_model(record, target_name)
-        if xls_file:
+        if xls_file and test_data:
             save_excel(xls_file, app_name, test_data, predicted, target_name)
+        else:
+            logger.error('app_name:{} get no data'.format(app_name))
     logger.info('do classification end')
 
 
@@ -50,8 +53,10 @@ def main():
     startTime = datetime.now()
     now = startTime.strftime('%Y%m%d%H%M%S')
     now1 = startTime.strftime('%Y-%m-%d %H:%M:%S')
-    app_list = ['com.cleanmaster.security', 'com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
+
+    app_list = ['com.dotc.latin.ime.tap', 'com.xime.latin.lite', 'com.cleanmaster.security', 'com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
     #下载评论
+    app_list = list(set(app_list))
     get_review(app_list)
     #做训练
     target_name = do_training()
