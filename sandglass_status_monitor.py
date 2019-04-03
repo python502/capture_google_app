@@ -12,6 +12,7 @@ import logging
 import logging.handlers
 import datetime
 import os
+import sys
 import json
 from datetime import datetime
 import requests
@@ -23,6 +24,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 myhash = hashlib.md5()
 md5_file = os.path.join(current_dir, 'md5file.txt')
 s = requests.session()
+pid = os.getpid()
 
 format_dict = {
     logging.DEBUG: logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(levelname)s - %(message)s'),
@@ -53,6 +55,21 @@ class Logger(object):
 logger = Logger(logging.INFO).getlogger()
 
 sandglass_log_dir = '/home/avazu/channel/sandglass/sandglass/cron/log'
+
+#pid
+def get_pid(cmd):
+    proc = subprocess.Popen(args=cmd, shell=True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    try:
+        stdout, stderr = proc.communicate()
+        if stderr or stdout:
+            logger.error('get_pid cmd:{}'.format(cmd))
+            logger.error('get_pid get stderr:{},stdout:{}'.format(stderr, stdout))
+            return True
+        else:
+            return False
+    except Exception, e:
+        logger.error('exec cmd:{} raise error:{},exit process'.format(cmd, e))
+        return True
 
 #获取文件MD5
 def get_md5sum(file_name):
@@ -148,9 +165,16 @@ def send_alert(msg):
         logger.error('send alert fail,res:{}'.format(res))
         return False
 
+def check_cron_singleton():
+    file_name = os.path.basename(__file__)
+    cmd = 'ps -ef|grep "{}"|grep -v "grep"|grep -v "{}"'.format(file_name, pid)
+    return get_pid(cmd)
 def main():
-    logger.info('************************ Begin check sandglass status ************************')
+    logger.info('************************PID:{} Begin check sandglass status ************************'.format(pid))
     startTime = datetime.now()
+    if check_cron_singleton():
+        logger.info('************************PID:{} End ahead of time ************************'.format(pid))
+        sys.exit(1)
     ret = check_status()
     logger.info('ret:{}'.format(ret))
     if False in ret.values():
@@ -160,7 +184,7 @@ def main():
         send_alert(msg)
     endTime = datetime.now()
     logger.info('all seconds:{}'.format((endTime - startTime).seconds))
-    logger.info('************************ End check sandglass status ************************')
+    logger.info('************************PID:{} End check sandglass status ************************'.format(pid))
 
 if __name__ == '__main__':
     main()
