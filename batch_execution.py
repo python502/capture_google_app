@@ -53,8 +53,8 @@ def main():
     startTime = datetime.now()
     now = startTime.strftime('%Y%m%d%H%M%S')
     now1 = startTime.strftime('%Y-%m-%d %H:%M:%S')
-
-    app_list = ['com.dotc.latin.ime.tap', 'com.xime.latin.lite', 'com.cleanmaster.security', 'com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones', 'com.appconnect.easycall']
+    #com.appconnect.easycall 去掉了
+    app_list = ['com.dotc.latin.ime.tap', 'com.xime.latin.lite', 'com.cleanmaster.security', 'com.cleanmaster.mguard', 'com.hyperspeed.rocketclean', 'com.apps.go.clean.boost.master', 'com.colorphone.smooth.dialer', 'com.call.flash.ringtones']
     #下载评论
     app_list = list(set(app_list))
     get_review(app_list)

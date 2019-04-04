@@ -22,11 +22,12 @@ def get_delta_data(delta):
     delta_time = delta_time.strftime('%Y%m%d')
     return delta_time
 
-delta_time = get_delta_data(7)
+# delta_time = get_delta_data(7)
 sender = 'long.zhang@dotcunited.com'
-receivers = ['813955655@qq.com', 'dylan.wu@dotcunited.com', 'lizhou.chen@dotcunited.com', 'chao.zhang@dotcunited.com', 'Karen.lu@dotcunited.com']
+receivers = ['813955655@qq.com', 'dylan.wu@dotcunited.com', 'lizhou.chen@dotcunited.com', 'chao.zhang@dotcunited.com', 'Karen.lu@dotcunited.com', 'tao.yang@dotcunited.com']
+# receivers = ['813955655@qq.com', 'tao.yang@dotcunited.com']
 smtp_server = 'smtp.dotcunited.com'
-
+password = '1qaz!QAZ'
 # attachments = r'C:\Users\Avazu Holding\Desktop\app.xls'
 
 
@@ -40,7 +41,6 @@ class SendMail(object):
         message['From'] = Header(sender, 'utf-8')
         message['To'] = Header(','.join(receivers), 'utf-8')
         message['Subject'] = Header(subject, 'utf-8')
-
         # 邮件正文内容
         message.attach(MIMEText(text, 'plain', 'utf-8'))
 

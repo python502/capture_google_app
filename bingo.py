@@ -10,6 +10,7 @@
 import random
 import numpy as np
 from logger import logger
+
 # random.shuffle(range,begin,end)
 for n in range(1,60):
     all = []
